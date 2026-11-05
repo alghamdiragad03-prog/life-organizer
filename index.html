@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>منظّم حياتي</title>
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="منظّم حياتي">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1 id="viewTitle">اليوم</h1>
+      <p id="viewSub" class="muted"></p>
+    </div>
+    <button class="icon-btn" id="themeBtn" aria-label="تبديل الوضع الليلي">🌙</button>
+  </header>
+
+  <main>
+    <!-- اليوم -->
+    <section id="view-today" class="view active">
+      <div class="card hero">
+        <div class="ring-wrap">
+          <svg viewBox="0 0 36 36" class="ring">
+            <circle cx="18" cy="18" r="15.9" class="ring-bg"/>
+            <circle cx="18" cy="18" r="15.9" class="ring-fg" id="ringFg"/>
+          </svg>
+          <span id="ringText">0%</span>
+        </div>
+        <div>
+          <h2 id="greeting">أهلاً</h2>
+          <p class="muted" id="todaySummary"></p>
+        </div>
+      </div>
+
+      <h3 class="section-title">جدول اليوم</h3>
+      <div id="todayEvents" class="list"></div>
+
+      <h3 class="section-title">مهام اليوم</h3>
+      <div id="todayTasks" class="list"></div>
+
+      <div id="overdueWrap" hidden>
+        <h3 class="section-title danger">متأخرة</h3>
+        <div id="overdueTasks" class="list"></div>
+      </div>
+    </section>
+
+    <!-- المهام -->
+    <section id="view-tasks" class="view">
+      <div class="chips" id="taskFilters">
+        <button class="chip active" data-filter="open">الحالية</button>
+        <button class="chip" data-filter="today">اليوم</button>
+        <button class="chip" data-filter="upcoming">القادمة</button>
+        <button class="chip" data-filter="nodate">بدون تاريخ</button>
+        <button class="chip" data-filter="done">المكتملة</button>
+      </div>
+      <div class="chips" id="catFilters"></div>
+      <div id="taskList" class="list"></div>
+    </section>
+
+    <!-- الجدول -->
+    <section id="view-schedule" class="view">
+      <div class="week-nav">
+        <button class="icon-btn" id="prevWeek" aria-label="الأسبوع السابق">→</button>
+        <button class="link-btn" id="thisWeek">هذا الأسبوع</button>
+        <button class="icon-btn" id="nextWeek" aria-label="الأسبوع التالي">←</button>
+      </div>
+      <div class="week-strip" id="weekStrip"></div>
+      <h3 class="section-title" id="dayTitle"></h3>
+      <div id="dayEvents" class="list"></div>
+      <h3 class="section-title">مهام هذا اليوم</h3>
+      <div id="dayTasks" class="list"></div>
+    </section>
+
+    <!-- الإعدادات -->
+    <section id="view-settings" class="view">
+      <div class="card">
+        <label class="field">
+          <span>اسمك</span>
+          <input id="userName" placeholder="مثلاً: رغد">
+        </label>
+      </div>
+      <div class="card">
+        <h3>التصنيفات</h3>
+        <div id="catManage" class="chips wrap"></div>
+        <form id="catForm" class="row">
+          <input id="catInput" placeholder="تصنيف جديد" required>
+          <button class="btn">إضافة</button>
+        </form>
+      </div>
+      <div class="card">
+        <h3>النسخ الاحتياطي</h3>
+        <p class="muted small">بياناتك محفوظة على هذا الجهاز فقط. صدّرها عشان تنقلها لجهاز ثاني أو تحتفظ بنسخة.</p>
+        <div class="row">
+          <button class="btn" id="exportBtn">تصدير</button>
+          <label class="btn ghost">استيراد<input type="file" id="importInput" accept="application/json" hidden></label>
+        </div>
+      </div>
+      <div class="card">
+        <button class="btn danger-btn" id="clearDone">حذف المهام المكتملة</button>
+      </div>
+    </section>
+  </main>
+
+  <button class="fab" id="fab" aria-label="إضافة">+</button>
+
+  <nav class="tabbar">
+    <button data-view="today" class="active"><span>☀︎</span>اليوم</button>
+    <button data-view="tasks"><span>✓</span>المهام</button>
+    <button data-view="schedule"><span>▦</span>الجدول</button>
+    <button data-view="settings"><span>⚙︎</span>الإعدادات</button>
+  </nav>
+
+  <!-- نافذة المهمة -->
+  <dialog id="taskDialog" class="sheet">
+    <form method="dialog" id="taskForm">
+      <h3 id="taskDialogTitle">مهمة جديدة</h3>
+      <input name="title" placeholder="وش المهمة؟" required autocomplete="off">
+      <textarea name="notes" rows="2" placeholder="ملاحظات (اختياري)"></textarea>
+      <div class="grid2">
+        <label class="field"><span>التاريخ</span><input type="date" name="due"></label>
+        <label class="field"><span>الوقت</span><input type="time" name="time"></label>
+      </div>
+      <div class="grid2">
+        <label class="field"><span>الأولوية</span>
+          <select name="priority">
+            <option value="high">عالية</option>
+            <option value="med" selected>متوسطة</option>
+            <option value="low">منخفضة</option>
+          </select>
+        </label>
+        <label class="field"><span>التصنيف</span><select name="category"></select></label>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn ghost danger-text" id="taskDelete" hidden>حذف</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>إلغاء</button>
+        <button class="btn" value="save">حفظ</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- نافذة الموعد -->
+  <dialog id="eventDialog" class="sheet">
+    <form method="dialog" id="eventForm">
+      <h3 id="eventDialogTitle">موعد جديد</h3>
+      <input name="title" placeholder="اسم الموعد (محاضرة، دوام، نادي...)" required autocomplete="off">
+      <input name="place" placeholder="المكان (اختياري)" autocomplete="off">
+      <label class="field"><span>التاريخ</span><input type="date" name="date" required></label>
+      <div class="grid2">
+        <label class="field"><span>من</span><input type="time" name="start" required></label>
+        <label class="field"><span>إلى</span><input type="time" name="end"></label>
+      </div>
+      <label class="field"><span>التكرار</span>
+        <select name="repeat">
+          <option value="none">مرة وحدة</option>
+          <option value="daily">يومياً</option>
+          <option value="weekly">أسبوعياً</option>
+          <option value="weekdays">أيام الدوام (الأحد–الخميس)</option>
+        </select>
+      </label>
+      <div class="field"><span>اللون</span>
+        <div class="colors" id="colorPicker"></div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn ghost danger-text" id="eventDelete" hidden>حذف</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" data-close>إلغاء</button>
+        <button class="btn" value="save">حفظ</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- اختيار نوع الإضافة -->
+  <dialog id="addChoice" class="sheet small-sheet">
+    <div class="choice">
+      <button class="btn big" id="addTaskBtn">✓ مهمة</button>
+      <button class="btn big ghost" id="addEventBtn">▦ موعد في الجدول</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
