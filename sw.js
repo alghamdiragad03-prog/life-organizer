@@ -1,4 +1,4 @@
-const CACHE = 'life-organizer-v2';
+const CACHE = 'life-organizer-v3';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'manifest.json', 'icons/icon.svg'];
 
 self.addEventListener('install', e => {
