@@ -1,54 +1,55 @@
 'use strict';
 
-/* ========= التخزين ========= */
+/* ========= Storage ========= */
 const KEY = 'life-organizer-v1';
 const COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#64748b'];
-const DEFAULT_CATS = ['شخصي', 'دراسة', 'عمل', 'بيت', 'صحة'];
+const DEFAULT_CATS = ['Personal', 'Study', 'Work', 'Home', 'Health'];
 
 function load() {
   try {
     const d = JSON.parse(localStorage.getItem(KEY));
     if (d && Array.isArray(d.tasks)) return { name: '', categories: DEFAULT_CATS, events: [], theme: '', ...d };
-  } catch (e) { /* بيانات تالفة أو تخزين غير متاح */ }
+  } catch (e) { /* corrupt data or storage unavailable */ }
   return { name: '', tasks: [], events: [], categories: [...DEFAULT_CATS], theme: '' };
 }
 let state = load();
 function save() {
-  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { toast('ما قدرت أحفظ البيانات على الجهاز'); }
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { toast("Couldn't save data on this device"); }
 }
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-/* ========= أدوات التاريخ ========= */
+/* ========= Date helpers ========= */
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const pad = n => String(n).padStart(2, '0');
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
 const todayISO = () => iso(new Date());
-const startOfWeek = d => addDays(d, -d.getDay()); // الأسبوع يبدأ الأحد
+const startOfWeek = d => addDays(d, -d.getDay()); // week starts on Sunday
 const nowMinutes = () => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); };
 const toMin = t => { if (!t) return null; const [h, m] = t.split(':').map(Number); return h * 60 + m; };
 
-const fmtDay = new Intl.DateTimeFormat('ar-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' });
-const fmtShortDay = new Intl.DateTimeFormat('ar-u-nu-latn', { weekday: 'short' });
+const fmtDay = new Intl.DateTimeFormat('en', { weekday: 'long', day: 'numeric', month: 'long' });
+const fmtShortDay = new Intl.DateTimeFormat('en', { weekday: 'short' });
 let fmtHijri;
-try { fmtHijri = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { fmtHijri = null; }
+try { fmtHijri = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { fmtHijri = null; }
 
 function fmtTime(t) {
   if (!t) return '';
   let [h, m] = t.split(':').map(Number);
-  const s = h < 12 ? 'ص' : 'م';
+  const s = h < 12 ? 'AM' : 'PM';
   h = h % 12 || 12;
   return `${h}:${pad(m)} ${s}`;
 }
 function relDate(s) {
   const t = todayISO();
-  if (s === t) return 'اليوم';
-  if (s === iso(addDays(new Date(), 1))) return 'بكرة';
-  if (s === iso(addDays(new Date(), -1))) return 'أمس';
+  if (s === t) return 'Today';
+  if (s === iso(addDays(new Date(), 1))) return 'Tomorrow';
+  if (s === iso(addDays(new Date(), -1))) return 'Yesterday';
   return fmtDay.format(parse(s));
 }
 
-/* ========= منطق الجدول ========= */
+/* ========= Schedule logic ========= */
 function occursOn(ev, dateStr) {
   if (dateStr < ev.date) return false;
   const day = parse(dateStr).getDay();
@@ -70,7 +71,7 @@ function taskSort(a, b) {
   return PRIO[a.priority] - PRIO[b.priority];
 }
 
-/* ========= عناصر الواجهة ========= */
+/* ========= UI helpers ========= */
 const $ = s => document.querySelector(s);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -87,7 +88,7 @@ function taskItem(t) {
   if (t.notes) meta.push(`<span>📝</span>`);
   item.innerHTML = `
     <span class="prio ${t.priority}"></span>
-    <button class="check" aria-label="إنجاز">${t.done ? '✓' : ''}</button>
+    <button class="check" aria-label="Mark done">${t.done ? '✓' : ''}</button>
     <div class="body"><div class="title">${esc(t.title)}</div>${meta.length ? `<div class="meta">${meta.join('')}</div>` : ''}</div>`;
   item.querySelector('.check').addEventListener('click', e => { e.stopPropagation(); toggleTask(t.id); });
   item.addEventListener('click', () => openTask(t));
@@ -102,7 +103,7 @@ function eventItem(ev, dateStr) {
     if (n >= s && n < e) item.classList.add('now');
     else if (n >= e) item.classList.add('past');
   }
-  const rep = { daily: 'يومياً', weekly: 'أسبوعياً', weekdays: 'أيام الدوام' }[ev.repeat];
+  const rep = { daily: 'Daily', weekly: 'Weekly', weekdays: 'Weekdays' }[ev.repeat];
   const meta = [];
   if (ev.place) meta.push(`<span>📍 ${esc(ev.place)}</span>`);
   if (rep) meta.push(`<span>🔁 ${rep}</span>`);
@@ -117,12 +118,12 @@ function fill(container, items, emptyText) {
   container.replaceChildren(...(items.length ? items : [emptyBox(emptyText)]));
 }
 
-/* ========= العرض: اليوم ========= */
+/* ========= View: Today ========= */
 function renderToday() {
   const t = todayISO();
   const h = new Date().getHours();
-  const hello = h < 12 ? 'صباح الخير' : 'مساء الخير';
-  $('#greeting').textContent = state.name ? `${hello} يا ${state.name}` : hello;
+  const hello = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  $('#greeting').textContent = state.name ? `${hello}, ${state.name}` : hello;
 
   const todays = tasksOn(t);
   const done = todays.filter(x => x.done).length;
@@ -131,24 +132,24 @@ function renderToday() {
   $('#ringText').textContent = `${pct}%`;
   const evs = eventsOn(t);
   $('#todaySummary').textContent = todays.length
-    ? `خلّصت ${done} من ${todays.length} مهام · ${evs.length} مواعيد`
-    : `ما عندك مهام اليوم · ${evs.length} مواعيد`;
+    ? `${done} of ${todays.length} tasks done · ${plural(evs.length, 'event')}`
+    : `No tasks today · ${plural(evs.length, 'event')}`;
 
-  fill($('#todayEvents'), evs.map(e => eventItem(e, t)), 'جدولك فاضي اليوم');
-  fill($('#todayTasks'), todays.map(taskItem), 'ما فيه مهام لليوم — اضغط + وأضف');
+  fill($('#todayEvents'), evs.map(e => eventItem(e, t)), 'Your schedule is clear today');
+  fill($('#todayTasks'), todays.map(taskItem), 'No tasks for today — tap + to add one');
 
   const overdue = state.tasks.filter(x => !x.done && x.due && x.due < t).sort(taskSort);
   $('#overdueWrap').hidden = !overdue.length;
   fill($('#overdueTasks'), overdue.map(taskItem), '');
 }
 
-/* ========= العرض: المهام ========= */
+/* ========= View: Tasks ========= */
 let taskFilter = 'open', catFilter = '';
 function renderTasks() {
   const t = todayISO();
   const cats = $('#catFilters');
   cats.replaceChildren(...['', ...state.categories].map(c => {
-    const b = el('button', `chip${c === catFilter ? ' active' : ''}`, esc(c || 'كل التصنيفات'));
+    const b = el('button', `chip${c === catFilter ? ' active' : ''}`, esc(c || 'All categories'));
     b.onclick = () => { catFilter = c; renderTasks(); };
     return b;
   }));
@@ -163,7 +164,7 @@ function renderTasks() {
   });
   if (catFilter) list = list.filter(x => x.category === catFilter);
   list.sort(taskFilter === 'done' ? (a, b) => (b.doneAt || 0) - (a.doneAt || 0) : taskSort);
-  const msg = taskFilter === 'done' ? 'ما خلّصت شي للحين 💪' : 'ما فيه مهام هنا ✨';
+  const msg = taskFilter === 'done' ? 'Nothing completed yet 💪' : 'No tasks here ✨';
   fill($('#taskList'), list.map(taskItem), msg);
 }
 $('#taskFilters').addEventListener('click', e => {
@@ -173,7 +174,7 @@ $('#taskFilters').addEventListener('click', e => {
   renderTasks();
 });
 
-/* ========= العرض: الجدول ========= */
+/* ========= View: Schedule ========= */
 let selDate = todayISO();
 function renderSchedule() {
   const start = startOfWeek(parse(selDate));
@@ -187,20 +188,20 @@ function renderSchedule() {
     return b;
   }));
   $('#dayTitle').textContent = relDate(selDate) === fmtDay.format(parse(selDate)) ? fmtDay.format(parse(selDate)) : `${relDate(selDate)} · ${fmtDay.format(parse(selDate))}`;
-  fill($('#dayEvents'), eventsOn(selDate).map(e => eventItem(e, selDate)), 'ما فيه مواعيد');
-  fill($('#dayTasks'), tasksOn(selDate).map(taskItem), 'ما فيه مهام');
+  fill($('#dayEvents'), eventsOn(selDate).map(e => eventItem(e, selDate)), 'No events');
+  fill($('#dayTasks'), tasksOn(selDate).map(taskItem), 'No tasks');
 }
 $('#prevWeek').onclick = () => { selDate = iso(addDays(parse(selDate), -7)); renderSchedule(); };
 $('#nextWeek').onclick = () => { selDate = iso(addDays(parse(selDate), 7)); renderSchedule(); };
 $('#thisWeek').onclick = () => { selDate = todayISO(); renderSchedule(); };
 
-/* ========= العرض: الإعدادات ========= */
+/* ========= View: Settings ========= */
 function renderSettings() {
   $('#userName').value = state.name;
   $('#catManage').replaceChildren(...state.categories.map(c => {
     const b = el('button', 'chip', `${esc(c)}<span class="x">✕</span>`);
     b.onclick = () => {
-      if (!confirm(`تحذف تصنيف "${c}"؟ المهام نفسها ما راح تنحذف.`)) return;
+      if (!confirm(`Delete category "${c}"? Tasks in it won't be deleted.`)) return;
       state.categories = state.categories.filter(x => x !== c);
       if (catFilter === c) catFilter = '';
       save(); renderSettings();
@@ -225,24 +226,24 @@ $('#importInput').addEventListener('change', async e => {
   try {
     const d = JSON.parse(await f.text());
     if (!Array.isArray(d.tasks) || !Array.isArray(d.events)) throw new Error();
-    if (!confirm('الاستيراد راح يستبدل بياناتك الحالية. تكمل؟')) return;
-    state = { ...load(), ...d }; save(); render(); toast('تم الاستيراد ✓');
-  } catch { toast('الملف غير صالح'); }
+    if (!confirm('Importing will replace your current data. Continue?')) return;
+    state = { ...load(), ...d }; save(); render(); toast('Imported ✓');
+  } catch { toast('Invalid file'); }
   e.target.value = '';
 });
 $('#clearDone').onclick = () => {
   const n = state.tasks.filter(t => t.done).length;
-  if (!n) return toast('ما فيه مهام مكتملة');
-  if (!confirm(`تحذف ${n} مهام مكتملة؟`)) return;
+  if (!n) return toast('No completed tasks');
+  if (!confirm(`Delete ${plural(n, 'completed task')}?`)) return;
   state.tasks = state.tasks.filter(t => !t.done); save(); render();
 };
 
-/* ========= المهام: إضافة/تعديل ========= */
+/* ========= Tasks: add/edit ========= */
 let editingTask = null;
 function openTask(t = null) {
   editingTask = t;
   const f = $('#taskForm');
-  f.category.replaceChildren(el('option', '', 'بدون'), ...state.categories.map(c => { const o = el('option', '', esc(c)); o.value = c; return o; }));
+  f.category.replaceChildren(el('option', '', 'None'), ...state.categories.map(c => { const o = el('option', '', esc(c)); o.value = c; return o; }));
   f.category.options[0].value = '';
   f.title.value = t?.title || '';
   f.notes.value = t?.notes || '';
@@ -250,7 +251,7 @@ function openTask(t = null) {
   f.time.value = t?.time || '';
   f.priority.value = t?.priority || 'med';
   f.category.value = t?.category || (catFilter || '');
-  $('#taskDialogTitle').textContent = t ? 'تعديل المهمة' : 'مهمة جديدة';
+  $('#taskDialogTitle').textContent = t ? 'Edit task' : 'New task';
   $('#taskDelete').hidden = !t;
   $('#taskDialog').showModal();
   if (!t) f.title.focus();
@@ -267,16 +268,16 @@ $('#taskForm').addEventListener('submit', e => {
 $('#taskDelete').onclick = () => {
   const t = editingTask, i = state.tasks.findIndex(x => x.id === t.id);
   state.tasks.splice(i, 1); save(); $('#taskDialog').close(); render();
-  toast('انحذفت المهمة', () => { state.tasks.splice(i, 0, t); save(); render(); });
+  toast('Task deleted', () => { state.tasks.splice(i, 0, t); save(); render(); });
 };
 function toggleTask(id) {
   const t = state.tasks.find(x => x.id === id);
   t.done = !t.done; t.doneAt = t.done ? Date.now() : null;
   save(); render();
-  if (t.done) toast('أحسنت! ✓', () => toggleTask(id));
+  if (t.done) toast('Nice work! ✓', () => toggleTask(id));
 }
 
-/* ========= المواعيد: إضافة/تعديل ========= */
+/* ========= Events: add/edit ========= */
 let editingEvent = null, pickedColor = COLORS[0];
 function renderColors() {
   $('#colorPicker').replaceChildren(...COLORS.map(c => {
@@ -297,7 +298,7 @@ function openEvent(ev = null) {
   f.repeat.value = ev?.repeat || 'none';
   pickedColor = ev?.color || COLORS[0];
   renderColors();
-  $('#eventDialogTitle').textContent = ev ? 'تعديل الموعد' : 'موعد جديد';
+  $('#eventDialogTitle').textContent = ev ? 'Edit event' : 'New event';
   $('#eventDelete').hidden = !ev;
   $('#eventDialog').showModal();
   if (!ev) f.title.focus();
@@ -314,13 +315,13 @@ $('#eventForm').addEventListener('submit', e => {
 });
 $('#eventDelete').onclick = () => {
   const ev = editingEvent;
-  if (ev.repeat !== 'none' && !confirm('هذا موعد متكرر — راح ينحذف من كل الأيام. تكمل؟')) return;
+  if (ev.repeat !== 'none' && !confirm('This is a repeating event — it will be removed from every day. Continue?')) return;
   const i = state.events.findIndex(x => x.id === ev.id);
   state.events.splice(i, 1); save(); $('#eventDialog').close(); render();
-  toast('انحذف الموعد', () => { state.events.splice(i, 0, ev); save(); render(); });
+  toast('Event deleted', () => { state.events.splice(i, 0, ev); save(); render(); });
 };
 
-/* ========= النوافذ ========= */
+/* ========= Dialogs ========= */
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
 document.querySelectorAll('dialog').forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
 $('#fab').onclick = () => {
@@ -334,14 +335,14 @@ let toastTimer;
 function toast(msg, undo) {
   const t = $('#toast');
   t.innerHTML = `<span>${esc(msg)}</span>`;
-  if (undo) { const b = el('button', '', 'تراجع'); b.onclick = () => { t.hidden = true; undo(); }; t.append(b); }
+  if (undo) { const b = el('button', '', 'Undo'); b.onclick = () => { t.hidden = true; undo(); }; t.append(b); }
   t.hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.hidden = true, 3500);
 }
 
-/* ========= التنقل ========= */
-const TITLES = { today: 'اليوم', tasks: 'المهام', schedule: 'الجدول', settings: 'الإعدادات' };
+/* ========= Navigation ========= */
+const TITLES = { today: 'Today', tasks: 'Tasks', schedule: 'Schedule', settings: 'Settings' };
 let currentView = 'today';
 function setView(v) {
   currentView = v;
@@ -365,7 +366,7 @@ function render() {
   ({ today: renderToday, tasks: renderTasks, schedule: renderSchedule, settings: renderSettings })[currentView]();
 }
 
-/* ========= الوضع الليلي ========= */
+/* ========= Dark mode ========= */
 function applyTheme() {
   const dark = state.theme ? state.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
@@ -378,7 +379,7 @@ $('#themeBtn').onclick = () => {
 };
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
 
-/* ========= البدء ========= */
+/* ========= Startup ========= */
 applyTheme();
 let saved; try { saved = sessionStorage.getItem('lo-view'); } catch (e) { /* */ }
 setView(TITLES[saved] ? saved : 'today');

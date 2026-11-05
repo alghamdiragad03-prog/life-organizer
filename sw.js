@@ -1,4 +1,4 @@
-const CACHE = 'life-organizer-v1';
+const CACHE = 'life-organizer-v2';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'manifest.json', 'icons/icon.svg'];
 
 self.addEventListener('install', e => {
@@ -7,7 +7,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
-// الشبكة أولاً عشان التحديثات توصل، والكاش احتياطي بدون إنترنت
+// Network first so updates arrive; cache as offline fallback
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith(

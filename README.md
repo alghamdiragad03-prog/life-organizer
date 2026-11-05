@@ -1,23 +1,23 @@
-# منظّم حياتي 🗓️
+# Life Organizer 🗓️
 
-تطبيق ويب شخصي (PWA) لترتيب الجدول والمهام — بالعربي، يشتغل على الجوال والكمبيوتر، وبدون إنترنت بعد أول فتح.
+A personal web app (PWA) for organizing your schedule and tasks. Works on phone and desktop, and offline after the first visit.
 
-## المميزات
-- **اليوم**: نسبة الإنجاز، جدول اليوم (الموعد الحالي يتلوّن والمنتهي يبهت)، مهام اليوم، والمتأخرة.
-- **المهام**: أولوية (عالية/متوسطة/منخفضة)، تاريخ ووقت، تصنيفات، ملاحظات، فلاتر.
-- **الجدول**: عرض أسبوعي يبدأ من الأحد، مواعيد مرة وحدة أو يومية أو أسبوعية أو أيام الدوام، مع ألوان ومكان.
-- تاريخ هجري وميلادي، وضع ليلي، تراجع بعد الحذف أو الإنجاز.
-- تصدير واستيراد البيانات (نسخة احتياطية JSON).
+## Features
+- **Today**: completion progress, today's schedule (current event highlighted, past events dimmed), today's tasks, and overdue tasks.
+- **Tasks**: priority (high / medium / low), due date and time, categories, notes, filters.
+- **Schedule**: weekly view starting Sunday; events can be one-off, daily, weekly, or weekdays (Sun–Thu), with colors and locations.
+- Gregorian + Hijri date, dark mode, undo after deleting or completing.
+- Export / import your data as a JSON backup.
 
-البيانات تنحفظ على جهازك فقط (localStorage).
+Data is stored on your device only (localStorage).
 
-## التشغيل
-افتح `index.html` أو شغّل سيرفر بسيط:
+## Run locally
+Open `index.html`, or serve the folder:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-## تثبيته على الجوال
-1. فعّل GitHub Pages من إعدادات المستودع (Settings → Pages → Branch: `main`).
-2. افتح الرابط من الجوال ← "إضافة إلى الشاشة الرئيسية".
+## Install on your phone
+1. Enable GitHub Pages (Settings → Pages → Branch: `main`).
+2. Open the link on your phone → "Add to Home Screen".

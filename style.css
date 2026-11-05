@@ -30,7 +30,7 @@
 [hidden] { display: none !important; }
 html, body { margin: 0; }
 body {
-  font-family: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100dvh;
@@ -104,7 +104,7 @@ main { max-width: 640px; margin: 0 auto; padding: 0 16px 24px; }
 .item.done .check { background: var(--primary); border-color: var(--primary); }
 
 .event { border-inline-start: 5px solid var(--ev, var(--primary)); }
-.event .time { font-weight: 700; font-size: .9rem; min-width: 56px; text-align: center; }
+.event .time { font-weight: 700; font-size: .9rem; min-width: 78px; text-align: start; }
 .event .time small { display: block; font-weight: 400; color: var(--muted); font-size: .75rem; }
 .event.now { background: color-mix(in srgb, var(--ev) 12%, var(--card)); }
 .event.past { opacity: .55; }
@@ -161,13 +161,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 .fab {
-  position: fixed; left: 20px; bottom: calc(84px + env(safe-area-inset-bottom));
+  position: fixed; right: 20px; bottom: calc(84px + env(safe-area-inset-bottom));
   width: 58px; height: 58px; border-radius: 18px; border: none;
   background: var(--primary); color: #fff; font-size: 2rem; line-height: 1;
   box-shadow: 0 8px 24px color-mix(in srgb, var(--primary) 45%, transparent);
   cursor: pointer; z-index: 6;
 }
-@media (min-width: 700px) { .fab { left: calc(50% - 300px); } }
+@media (min-width: 700px) { .fab { right: calc(50% - 300px); } }
 
 .tabbar {
   position: fixed; bottom: 0; inset-inline: 0; z-index: 6;
