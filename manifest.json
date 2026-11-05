@@ -1,0 +1,15 @@
+{
+  "name": "Life Organizer",
+  "short_name": "Life Organizer",
+  "description": "Plan your day, crush your tasks, build your streak.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f3fb",
+  "theme_color": "#6d28d9",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
